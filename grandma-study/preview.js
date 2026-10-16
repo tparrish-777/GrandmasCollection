@@ -57,7 +57,7 @@
     };
 
     var script = document.createElement('script');
-    script.src = sourcePath;
+    script.src = release ? sourcePath : sourcePath + '?preview=' + Date.now();
     script.onerror = function () {
       errorBox.textContent = 'The study source could not load. Return to the workspace and check that this release exists.';
       document.getElementById('preview-start').hidden = false;
