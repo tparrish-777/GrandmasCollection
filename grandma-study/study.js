@@ -594,7 +594,7 @@ window.CAMERA_SKIPPED = !!chsPreviewReplayState;
     pageBtn.onclick = function() { adminSkipThisPage(); };
 
     // Rewind is available in the standalone and CHS researcher previews.
-    // preview records no participant data and requests no camera access.
+    // CHS replay rows are flagged; standalone preview saves no responses.
     var backBtn = document.createElement('button');
     backBtn.id = 'admin-btn-back';
     backBtn.className = 'admin-btn-alt';
