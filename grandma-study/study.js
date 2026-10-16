@@ -596,8 +596,8 @@ window.CAMERA_SKIPPED = false;
     bar.appendChild(famBtn);
     bar.appendChild(endBtn);
     bar.appendChild(pageBtn);
-    bar.appendChild(backBtn);
-    bar.appendChild(startBtn);
+    if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') bar.appendChild(backBtn);
+    if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') bar.appendChild(startBtn);
 
     document.body.appendChild(bar);
   }
