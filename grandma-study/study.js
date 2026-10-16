@@ -127,6 +127,31 @@ function getChsChildId() {
 }
 
 var chsResponseId = getChsResponseId();
+function isChsStudyPreview() {
+  return window.location.pathname.indexOf('/exp/studies/j/') === 0 &&
+    /\/preview\/?$/.test(window.location.pathname);
+}
+
+var CHS_BACK_STATE_KEY = 'grandma-researcher-back:' + chsResponseId;
+var chsPreviewReplayState = null;
+if (isChsStudyPreview()) {
+  try {
+    var savedReplay = sessionStorage.getItem(CHS_BACK_STATE_KEY);
+    var requestedStart = parseInt(getUrlParam('grandma_researcher_start_at'), 10);
+    if (savedReplay && requestedStart >= 1 && requestedStart <= 64) {
+      var parsedReplay = JSON.parse(savedReplay);
+      if (parsedReplay.responseId === chsResponseId &&
+          parsedReplay.startAt === requestedStart &&
+          Array.isArray(parsedReplay.familyOrder) &&
+          parsedReplay.familyOrder.length === 8 &&
+          parsedReplay.condition >= 0 && parsedReplay.condition <= 3 &&
+          Math.floor(parsedReplay.condition) === parsedReplay.condition) {
+        chsPreviewReplayState = parsedReplay;
+      }
+    }
+    sessionStorage.removeItem(CHS_BACK_STATE_KEY);
+  } catch (e) {}
+}
 var chsChildId    = getChsChildId();
 
 // ================================================================
@@ -512,7 +537,7 @@ var timeline = [];
 // The full-screen trial LAYOUT (grandma-trial-phase, on_trial_start,
 // bigger captions) is NOT admin code — keep it for launch.
 // ================================================================
-window.CAMERA_SKIPPED = false;
+window.CAMERA_SKIPPED = !!chsPreviewReplayState;
 
 (function buildAdminBar() {
   function attach() {
@@ -568,7 +593,7 @@ window.CAMERA_SKIPPED = false;
     pageBtn.textContent = '\u23ED Skip this page';
     pageBtn.onclick = function() { adminSkipThisPage(); };
 
-    // Rewind controls are available only in the standalone preview. That
+    // Rewind is available in the standalone and CHS researcher previews.
     // preview records no participant data and requests no camera access.
     var backBtn = document.createElement('button');
     backBtn.id = 'admin-btn-back';
@@ -576,9 +601,9 @@ window.CAMERA_SKIPPED = false;
     backBtn.textContent = '\u2190 Back one story screen';
     backBtn.onclick = function() {
       var d = (jsPsych.getCurrentTrial && jsPsych.getCurrentTrial().data) || {};
-      if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function' &&
+      if ((typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function' || isChsStudyPreview()) &&
           typeof d.slide_number === 'number' && d.slide_number > 1) {
-        window.GRANDMA_PREVIEW_RESTART_AT(d.slide_number - 1);
+        adminBackOneSlide();
       }
     };
 
@@ -596,7 +621,7 @@ window.CAMERA_SKIPPED = false;
     bar.appendChild(famBtn);
     bar.appendChild(endBtn);
     bar.appendChild(pageBtn);
-    if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') bar.appendChild(backBtn);
+    if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function' || isChsStudyPreview()) bar.appendChild(backBtn);
     if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') bar.appendChild(startBtn);
 
     document.body.appendChild(bar);
@@ -630,8 +655,8 @@ function showAdminBar(mode) {
   }
   if (page) { page.style.display = (mode === 'page')   ? 'inline-block' : 'none'; }
   if (back) {
-    back.style.display = (isPreview && mode === 'trial') ? 'inline-block' : 'none';
-    back.disabled = !(isPreview && mode === 'trial' &&
+    back.style.display = ((isPreview || isChsStudyPreview()) && mode === 'trial') ? 'inline-block' : 'none';
+    back.disabled = !((isPreview || isChsStudyPreview()) && mode === 'trial' &&
       typeof d.slide_number === 'number' && d.slide_number > 1);
   }
   if (start) { start.style.display = (isPreview && mode === 'trial') ? 'inline-block' : 'none'; }
@@ -656,7 +681,7 @@ function hideAdminBar() {
 // slide is reached the target clears and that slide renders normally.
 // ADMIN_FASTFWD stays true while fast-forwarding so the stop-recording step
 // self-skips too; it clears when we land on the first post-study page.
-window.ADMIN_SKIP_TARGET = (window.GRANDMA_RESEARCHER_PREVIEW === true &&
+window.ADMIN_SKIP_TARGET = chsPreviewReplayState ? chsPreviewReplayState.startAt : (window.GRANDMA_RESEARCHER_PREVIEW === true &&
   typeof window.GRANDMA_PREVIEW_START_AT === 'number' &&
   window.GRANDMA_PREVIEW_START_AT > 1)
   ? window.GRANDMA_PREVIEW_START_AT : null;
@@ -681,6 +706,33 @@ function adminMaybeAutoSkip() {
 // Jump to the first slide of the next family. Families are 8 slides each,
 // so first-slides are slide_number 1, 9, 17, ... If already in the last
 // family, this jumps to the "get a grown-up" screen instead.
+function adminBackOneSlide() {
+  var d = (jsPsych.getCurrentTrial && jsPsych.getCurrentTrial().data) || {};
+  var n = d.slide_number;
+  if (typeof n !== 'number' || n <= 1) { return; }
+  if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') {
+    window.GRANDMA_PREVIEW_RESTART_AT(n - 1);
+    return;
+  }
+  if (!isChsStudyPreview() || !chsResponseId) { return; }
+  var target = n - 1;
+  var replayState = {
+    responseId: chsResponseId,
+    startAt: target,
+    condition: CONDITION,
+    familyOrder: orderedFamilies.map(function(f) { return f.id; })
+  };
+  try {
+    sessionStorage.setItem(CHS_BACK_STATE_KEY, JSON.stringify(replayState));
+  } catch (e) {
+    console.warn('[ADMIN] Unable to save CHS preview replay state:', e);
+    return;
+  }
+  var url = new URL(window.location.href);
+  url.searchParams.set('grandma_researcher_start_at', String(target));
+  window.location.assign(url.href);
+}
+
 function adminNextFamily() {
   var d = (jsPsych.getCurrentTrial && jsPsych.getCurrentTrial().data) || {};
   var n = d.slide_number;
@@ -769,7 +821,7 @@ var SESSION_ID = 'G' + Date.now().toString(36).toUpperCase();
 // ================================================================
 // CONDITION ASSIGNMENT
 // ================================================================
-var CONDITION  = Math.floor(Math.random() * 4);
+var CONDITION  = chsPreviewReplayState ? chsPreviewReplayState.condition : Math.floor(Math.random() * 4);
 var COND_LABEL = ['A', 'B', 'C', 'D'][CONDITION];
 
 console.log('=========================================');
@@ -789,7 +841,9 @@ jsPsych.data.addProperties({
   condition:       CONDITION,
   condition_label: COND_LABEL,
   q_order:         CONDITION < 2 ? 'Q1_then_Q2' : 'Q2_then_Q1',
-  img_side:        CONDITION % 2 === 0 ? 'original' : 'flipped'
+  img_side:        CONDITION % 2 === 0 ? 'original' : 'flipped',
+    researcher_preview: isChsStudyPreview(),
+    researcher_preview_replay: !!chsPreviewReplayState
 });
 
 // ================================================================
@@ -1558,7 +1612,7 @@ function shuffle(arr) {
 // ================================================================
 var set1 = shuffle(FAMILIES.filter(function(f) { return f.set === 1; }));
 var set2 = shuffle(FAMILIES.filter(function(f) { return f.set === 2; }));
-var orderedFamilies = Math.random() < 0.5 ? set1.concat(set2) : set2.concat(set1);
+var orderedFamilies = chsPreviewReplayState ? chsPreviewReplayState.familyOrder.map(function(id) { return FAMILIES.filter(function(f) { return f.id === id; })[0]; }) : (Math.random() < 0.5 ? set1.concat(set2) : set2.concat(set1));
 var TOTAL_FAMILIES  = orderedFamilies.length;
 
 console.log('Family order: ' +
@@ -2053,7 +2107,10 @@ var cameraSetup = {
 // per supervisor request. Order: intro -> camera setup + consent + start
 // recording -> "getting ready" preload -> "setup done, watch from a
 // distance" hand-off -> trials.
-timeline.push(instructions, cameraSetup, preloadTrial, setupCompleteSlide);
+timeline.push({
+  timeline: [instructions, cameraSetup, preloadTrial, setupCompleteSlide],
+  conditional_function: function() { return !chsPreviewReplayState; }
+});
 
 for (var t = 0; t < expTrials.length; t++) {
   timeline.push(expTrials[t]);
