@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grandma study · Researcher preview</title>
+  <link rel="stylesheet" href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css">
+  <style>
+    body{margin:0;background:#f8fafc;font-family:Arial,sans-serif}
+    #preview-notice{box-sizing:border-box;position:fixed;bottom:0;left:0;right:0;z-index:2147483646;padding:8px 18px;background:#173e62;color:#fff;font:13px/1.5 Arial,sans-serif;text-align:center}
+    #preview-notice a{color:#fff;margin-right:15px}#preview-notice button{font:inherit;margin-left:12px;cursor:pointer}
+    #preview-start{max-width:700px;margin:10vh auto;padding:38px;border:1px solid #dbe5eb;border-radius:24px;background:#fff;color:#233b50;box-shadow:0 12px 40px #173e6210}
+    #preview-start h1{font-size:34px;color:#173e62}#preview-start p{font-size:18px;line-height:1.6}
+    #start-preview{background:#176c61;color:#fff;border:0;border-radius:12px;padding:15px 24px;font-size:18px;font-weight:bold;cursor:pointer}
+    #preview-error{color:#9c2535;white-space:pre-wrap}#jspsych-target{padding-bottom:45px}
+  </style>
+  <script src="https://unpkg.com/jspsych@8.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.1.0"></script>
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <main id="preview-start">
+    <p style="font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:#24776c;font-weight:bold">Researcher preview</p>
+    <h1>“Grandma, what gray hair you have!”</h1>
+    <p>Preview the story game with the current images, narration, and condition assignment.</p>
+    <p>This preview skips CHS consent, camera setup, recording, and the exit survey. It submits no responses. Use CHS to test those features after importing.</p>
+    <button id="start-preview">Start preview</button>
+    <p><a href="index.html">Back to study workspace</a></p>
+    <p id="preview-error" role="alert"></p>
+  </main>
+  <div id="jspsych-target"></div>
+  <aside id="preview-notice"><a href="index.html">← Study workspace</a> Researcher preview · No camera or response submission <button id="restart-preview">Restart</button></aside>
+</body>
+</html>
