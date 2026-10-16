@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grandma study · Researcher workspace</title>
+  <style>
+    :root{color-scheme:light;font-family:Arial,sans-serif;color:#233b50;background:#f8fafc}
+    *{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:auto;padding:52px 24px 64px}
+    .eyebrow{color:#24776c;font-size:13px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase}
+    h1{font-size:clamp(34px,5vw,54px);line-height:1.08;max-width:800px;margin:16px 0 18px;color:#173e62}
+    .lead{font-size:20px;line-height:1.6;max-width:730px;color:#536979}p{line-height:1.65}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 38px}
+    a{color:#176c61}a.button,button{display:inline-block;border:1px solid #bfd0d8;border-radius:12px;padding:14px 20px;background:white;color:#20445d;font:700 16px Arial;text-decoration:none;cursor:pointer}
+    a.primary,button.primary{background:#176c61;color:white;border-color:#176c61}a:focus-visible,button:focus-visible,textarea:focus-visible{outline:3px solid #ebaa2f;outline-offset:4px}
+    .card{padding:28px;border-radius:20px;background:white;border:1px solid #dce6eb;margin-top:22px;box-shadow:0 6px 24px #173e6207}
+    h2{font-size:25px;margin:0 0 12px;color:#173e62}.tag{display:inline-block;padding:7px 11px;border-radius:20px;background:#e9f4ee;color:#276c52;font-size:13px;font-weight:bold}
+    ol{padding-left:24px;line-height:1.7}li{margin:10px 0}.muted{font-size:14px;color:#607585}
+    details{margin-top:20px}summary{cursor:pointer;font-weight:bold}textarea{width:100%;height:270px;margin:16px 0;font:13px/1.5 monospace;border:1px solid #b8cbd5;padding:14px;border-radius:10px;resize:vertical}
+    #copy-status{min-height:24px;color:#176c61}footer{margin-top:32px;color:#607585;font-size:13px}
+  </style>
+</head>
+<body>
+<main>
+  <span class="eyebrow">Researcher workspace · CHS study 5965</span>
+  <h1>“Grandma, what gray hair you have!”</h1>
+  <p class="lead">An editable home for the grandmother study. Make changes on GitHub, preview the story game, then copy the chosen version into Children Helping Science.</p>
+  <div class="actions">
+    <a class="button primary" href="preview.html">Preview the current draft</a>
+    <a class="button" href="https://github.com/tparrish-777/GrandmasCollection/edit/main/grandma-study/study.js">Edit the study on GitHub</a>
+    <a class="button" href="#import">Import into CHS</a>
+  </div>
+  <section class="card">
+    <span class="tag">Initial release · grandma-v1-2026-10-16</span>
+    <h2 style="margin-top:18px">The current study, preserved</h2>
+    <p>This first release copies the grandmother study code from CHS exactly. The stories, narration, four conditions, family ordering, and existing researcher controls are preserved.</p>
+    <p class="muted">The standalone preview skips CHS camera setup, consent, and the exit survey. It records no video and submits no responses. Check those features in CHS after importing. The existing study still includes testing controls marked for removal before launch.</p>
+    <a href="preview.html?release=grandma-v1-2026-10-16">Preview the frozen first release</a>
+  </section>
+  <section class="card" id="import">
+    <h2>Update CHS when you are ready</h2>
+    <ol>
+      <li>Edit <a href="https://github.com/tparrish-777/GrandmasCollection/blob/main/grandma-study/study.js">the study source on GitHub</a> and preview the draft.</li>
+      <li>Choose the current draft or the frozen first release below, then copy its full study code.</li>
+      <li>Open <a href="https://childrenhelpingscience.com/exp/studies/5965/design/">the grandmother study design in CHS</a>. Replace its <strong>jsPsych Experiment Code</strong> with the copied code and save. Keep its plugin selections.</li>
+      <li>Use the CHS preview to check consent, recording, the story choices, and the exit survey before using that version with participants.</li>
+    </ol>
+    <p>GitHub edits update this preview after the site finishes publishing. CHS uses the code you last saved there; importing a new version is a separate step.</p>
+    <div class="actions" style="margin:20px 0 8px">
+      <button class="primary" data-source="study.js">Copy current draft for CHS</button>
+      <button data-source="releases/grandma-v1-2026-10-16.js">Copy frozen first release</button>
+    </div>
+    <p id="copy-status" role="status" aria-live="polite"></p>
+    <details id="code-details">
+      <summary>View or select the full import code</summary>
+      <textarea id="import-code" readonly aria-label="Full CHS study import code" spellcheck="false"></textarea>
+      <p class="muted">Copy only this JavaScript code into CHS. The preview webpage itself is not the import file.</p>
+    </details>
+    <p class="muted"><a href="study.js" download>Download the current draft</a> · <a href="releases/grandma-v1-2026-10-16.js" download>Download the frozen first release</a></p>
+  </section>
+  <footer>Based on the grandmother study as inspected on October 16, 2026. “Find the Caregiver!” and “Who Helps Where?” were read-only references. No CHS study was changed during this setup.</footer>
+</main>
+<script>
+  document.querySelectorAll('[data-source]').forEach(function(button) {
+    button.addEventListener('click', async function() {
+      var status = document.getElementById('copy-status');
+      status.textContent = 'Loading study code…';
+      try {
+        var response = await fetch(button.dataset.source, {cache:'no-store'});
+        if (!response.ok) throw new Error('The code file could not be loaded.');
+        var source = await response.text();
+        document.getElementById('import-code').value = source;
+        try {
+          await navigator.clipboard.writeText(source);
+          status.textContent = 'Full study code copied. Paste it into the grandmother study’s jsPsych Experiment Code in CHS.';
+        } catch (clipboardError) {
+          document.getElementById('code-details').open = true;
+          document.getElementById('import-code').focus();
+          document.getElementById('import-code').select();
+          status.textContent = 'Select and copy the full code shown below, then paste it into CHS.';
+        }
+      } catch (error) { status.textContent = error.message; }
+    });
+  });
+</script>
+</body>
+</html>
