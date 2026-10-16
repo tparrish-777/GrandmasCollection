@@ -437,11 +437,12 @@ grandmaStyle.textContent =
   // ADMIN: styles for the testing-only skip bar. REMOVE BEFORE LAUNCH.
   '#admin-skip-bar{position:fixed;top:0;left:0;right:0;z-index:2147483647;' +
   'display:none;gap:10px;align-items:center;justify-content:center;' +
-  'padding:8px 12px;background:#111;color:#fff;' +
+  'flex-wrap:wrap;box-sizing:border-box;padding:8px 12px;background:#111;color:#fff;' +
   'font-family:monospace;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.4);}' +
   '#admin-skip-bar button{background:#e63946;color:#fff;border:none;' +
   'border-radius:6px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:13px;}' +
   '#admin-skip-bar button:hover{background:#c92d3a;}' +
+  '#admin-skip-bar button:disabled{opacity:.45;cursor:not-allowed;}' +
   '#admin-skip-bar button.admin-btn-alt{background:#2563eb;}' +
   '#admin-skip-bar button.admin-btn-alt:hover{background:#1d4ed8;}' +
   '#admin-skip-bar button.admin-btn-go{background:#16a34a;}' +
@@ -558,7 +559,7 @@ window.CAMERA_SKIPPED = false;
     endBtn.id = 'admin-btn-end';
     endBtn.className = 'admin-btn-alt';
     endBtn.textContent = '\u23ED\u23ED Skip to grown-up screen';
-    endBtn.onclick = function() { adminSkipToPostStudy(); };
+    endBtn.onclick = function() { adminSkipToEnd(); };
 
     // --- Button 4: skip the current post-study page (email / exit survey) ---
     var pageBtn = document.createElement('button');
@@ -567,10 +568,36 @@ window.CAMERA_SKIPPED = false;
     pageBtn.textContent = '\u23ED Skip this page';
     pageBtn.onclick = function() { adminSkipThisPage(); };
 
+    // Rewind controls are available only in the standalone preview. That
+    // preview records no participant data and requests no camera access.
+    var backBtn = document.createElement('button');
+    backBtn.id = 'admin-btn-back';
+    backBtn.className = 'admin-btn-alt';
+    backBtn.textContent = '\u2190 Back one story screen';
+    backBtn.onclick = function() {
+      var d = (jsPsych.getCurrentTrial && jsPsych.getCurrentTrial().data) || {};
+      if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function' &&
+          typeof d.slide_number === 'number' && d.slide_number > 1) {
+        window.GRANDMA_PREVIEW_RESTART_AT(d.slide_number - 1);
+      }
+    };
+
+    var startBtn = document.createElement('button');
+    startBtn.id = 'admin-btn-start';
+    startBtn.className = 'admin-btn-go';
+    startBtn.textContent = '\u21BA Start from beginning';
+    startBtn.onclick = function() {
+      if (typeof window.GRANDMA_PREVIEW_RESTART_AT === 'function') {
+        window.GRANDMA_PREVIEW_RESTART_AT(1);
+      }
+    };
+
     bar.appendChild(camBtn);
     bar.appendChild(famBtn);
     bar.appendChild(endBtn);
     bar.appendChild(pageBtn);
+    bar.appendChild(backBtn);
+    bar.appendChild(startBtn);
 
     document.body.appendChild(bar);
   }
@@ -591,10 +618,30 @@ function showAdminBar(mode) {
   var fam  = document.getElementById('admin-btn-family');
   var end  = document.getElementById('admin-btn-end');
   var page = document.getElementById('admin-btn-page');
+  var back = document.getElementById('admin-btn-back');
+  var start = document.getElementById('admin-btn-start');
+  var isPreview = window.GRANDMA_RESEARCHER_PREVIEW === true;
+  var d = (jsPsych.getCurrentTrial && jsPsych.getCurrentTrial().data) || {};
   if (cam)  { cam.style.display  = (mode === 'camera') ? 'inline-block' : 'none'; }
   if (fam)  { fam.style.display  = (mode === 'trial')  ? 'inline-block' : 'none'; }
-  if (end)  { end.style.display  = (mode === 'trial')  ? 'inline-block' : 'none'; }
+  if (end)  {
+    end.style.display = (mode === 'trial') ? 'inline-block' : 'none';
+    if (isPreview) { end.textContent = '\u23ED\u23ED Skip to debrief'; }
+  }
   if (page) { page.style.display = (mode === 'page')   ? 'inline-block' : 'none'; }
+  if (back) {
+    back.style.display = (isPreview && mode === 'trial') ? 'inline-block' : 'none';
+    back.disabled = !(isPreview && mode === 'trial' &&
+      typeof d.slide_number === 'number' && d.slide_number > 1);
+  }
+  if (start) { start.style.display = (isPreview && mode === 'trial') ? 'inline-block' : 'none'; }
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(function () {
+      if (b && b.style.display !== 'none') {
+        document.documentElement.style.setProperty('--admin-bar-h', b.offsetHeight + 'px');
+      }
+    });
+  }
 }
 function hideAdminBar() {
   var b = document.getElementById('admin-skip-bar');
@@ -609,8 +656,12 @@ function hideAdminBar() {
 // slide is reached the target clears and that slide renders normally.
 // ADMIN_FASTFWD stays true while fast-forwarding so the stop-recording step
 // self-skips too; it clears when we land on the first post-study page.
-window.ADMIN_SKIP_TARGET = null;
+window.ADMIN_SKIP_TARGET = (window.GRANDMA_RESEARCHER_PREVIEW === true &&
+  typeof window.GRANDMA_PREVIEW_START_AT === 'number' &&
+  window.GRANDMA_PREVIEW_START_AT > 1)
+  ? window.GRANDMA_PREVIEW_START_AT : null;
 window.ADMIN_FASTFWD     = false;
+window.ADMIN_SKIP_TO_DEBRIEF = false;
 
 function adminMaybeAutoSkip() {
   if (window.ADMIN_SKIP_TARGET == null) { return false; }
@@ -656,6 +707,15 @@ function adminSkipToPostStudy() {
   try { jsPsych.finishTrial(); } catch (e) {}
 }
 
+// In the no-data researcher preview, fast-forward through the handoff page
+// and land on the debrief. CHS keeps the separate grown-up handoff control.
+function adminSkipToEnd() {
+  if (window.GRANDMA_RESEARCHER_PREVIEW === true) {
+    window.ADMIN_SKIP_TO_DEBRIEF = true;
+  }
+  adminSkipToPostStudy();
+}
+
 // Skip just the current post-study page (advance one trial).
 function adminSkipThisPage() {
   try { jsPsych.finishTrial(); } catch (e) {}
@@ -687,6 +747,10 @@ function stopRecordOnLoad() {
 // up screen" lands) and shows the per-page "Skip this page" button so admins
 // can advance through them.
 function wrapupPageOnLoad() {
+  if (window.GRANDMA_RESEARCHER_PREVIEW === true && window.ADMIN_SKIP_TO_DEBRIEF) {
+    setTimeout(function() { try { jsPsych.finishTrial(); } catch (e) {} }, 0);
+    return;
+  }
   window.ADMIN_FASTFWD     = false;
   window.ADMIN_SKIP_TARGET = null;
   showAdminBar('page');
@@ -1965,6 +2029,7 @@ var debrief = {
     // ADMIN: final page — clear any skip state and hide the bar.
     window.ADMIN_FASTFWD     = false;
     window.ADMIN_SKIP_TARGET = null;
+    window.ADMIN_SKIP_TO_DEBRIEF = false;
     if (typeof hideAdminBar === 'function') { hideAdminBar(); }
   },
   data: { trial_type: "debrief" }

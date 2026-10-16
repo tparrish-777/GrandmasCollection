@@ -5,7 +5,35 @@
   var errorBox = document.getElementById('preview-error');
   var parameters = new URLSearchParams(window.location.search);
   var release = parameters.get('release');
+  var seed = parameters.get('seed') || String(Date.now());
+  var requestedStart = Number(parameters.get('startAt'));
+  var startAt = Number.isInteger(requestedStart) && requestedStart >= 1 && requestedStart <= 64
+    ? requestedStart : null;
   var sourcePath = 'study.js';
+  window.GRANDMA_RESEARCHER_PREVIEW = true;
+  window.GRANDMA_PREVIEW_START_AT = startAt;
+
+  function seededRandom(seedText) {
+    var state = 2166136261;
+    for (var i = 0; i < seedText.length; i++) {
+      state ^= seedText.charCodeAt(i);
+      state = Math.imul(state, 16777619);
+    }
+    if (!state) { state = 1; }
+    return function () {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  window.GRANDMA_PREVIEW_RESTART_AT = function (slideNumber) {
+    var target = Math.max(1, Math.min(64, Math.floor(Number(slideNumber) || 1)));
+    var url = new URL(window.location.href);
+    url.searchParams.set('startAt', String(target));
+    url.searchParams.set('seed', seed);
+    window.location.assign(url.href);
+  };
+
   if (release) {
     if (!/^grandma-v[0-9]+-[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(release)) {
       button.disabled = true;
@@ -14,7 +42,12 @@
     }
     sourcePath = 'releases/' + release + '.js';
   }
-  document.getElementById('restart-preview').addEventListener('click', function () { window.location.reload(); });
+  document.getElementById('restart-preview').addEventListener('click', function () {
+    var url = new URL(window.location.href);
+    url.searchParams.delete('startAt');
+    url.searchParams.set('seed', seed);
+    window.location.assign(url.href);
+  });
 
   button.addEventListener('click', function () {
     button.disabled = true;
@@ -58,7 +91,11 @@
 
     var script = document.createElement('script');
     script.src = release ? sourcePath : sourcePath + '?preview=' + Date.now();
+    var nativeRandom = Math.random;
+    Math.random = seededRandom(seed);
+    script.onload = function () { Math.random = nativeRandom; };
     script.onerror = function () {
+      Math.random = nativeRandom;
       errorBox.textContent = 'The study source could not load. Return to the workspace and check that this release exists.';
       document.getElementById('preview-start').hidden = false;
     };
@@ -70,4 +107,6 @@
     });
     document.head.appendChild(script);
   }, {once:true});
+
+  if (startAt !== null) { button.click(); }
 })();

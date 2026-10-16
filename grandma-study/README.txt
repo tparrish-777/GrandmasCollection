@@ -40,6 +40,13 @@ It executes study.js with a preview adapter that omits only CHS camera, consent,
 recording and exit-survey nodes. It requests no camera permission and sends no
 study responses. The preview retains the existing researcher skip controls.
 The preview is for researchers. Participants should continue to use the CHS link.
+During story screens, its researcher bar provides Back one story screen, Start
+from beginning, Next family, and Skip to debrief. Back and Start reload the
+no-data preview at the selected numbered slide while preserving the condition
+and randomized family order. Restart returns to the preview start screen, and
+Study workspace returns to index.html. The newly added Back/Start/Skip to
+debrief controls are preview-only; the imported CHS code retains its existing
+camera skip, next-family, skip-to-grown-up, and skip-page controls.
 
 All eight families, four conditions, 64 story/question trials, recorded narration,
 image paths and existing study logic are preserved in the initial import release.
