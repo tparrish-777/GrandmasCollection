@@ -238,7 +238,7 @@ grandmaStyle.textContent =
   'padding:8px 18px;display:inline-block;margin:4px auto 8px;' +
   'font-size:20px;font-weight:700;color:#1e40af;font-family:Arial,sans-serif;}' +
 
-  '.choice-img-btn{width:auto;height:clamp(180px,40vh,420px);' +
+  '.choice-img-btn{width:auto;height:clamp(180px,60vh,520px);' +
   'object-fit:contain;cursor:pointer;' +
   'border:6px solid #e9ecef;border-radius:22px;background:#fafafa;padding:8px;display:block;' +
   '-webkit-transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);' +
@@ -258,7 +258,7 @@ grandmaStyle.textContent =
   'transform:translateY(-5px) scale(1.02);}' +
   '.choice-cell:hover .choice-frame{border-color:#a5b4fc;' +
   'box-shadow:0 14px 35px rgba(99,102,241,0.22);}' +
-  '.choice-frame{position:relative;height:clamp(180px,40vh,420px);' +
+  '.choice-frame{position:relative;height:clamp(180px,60vh,520px);' +
   'border:6px solid #e9ecef;border-radius:22px;background:#fafafa;padding:8px;' +
   'box-shadow:0 6px 20px rgba(0,0,0,0.08);' +
   '-webkit-transition:border-color 0.2s,box-shadow 0.2s;' +
@@ -272,7 +272,7 @@ grandmaStyle.textContent =
   '-webkit-align-items:center;align-items:center;cursor:pointer;' +
   '-webkit-transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);' +
   'transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);}' +
-  '.choice-house-btn svg{height:clamp(200px,42vh,420px) !important;width:auto;display:block;}' +
+  '.choice-house-btn svg{height:clamp(200px,60vh,520px) !important;width:auto;display:block;}' +
   '.choice-house-btn:hover{-webkit-transform:translateY(-5px) scale(1.02);' +
   'transform:translateY(-5px) scale(1.02);}' +
   '.choice-label{font-family:Arial,sans-serif;font-weight:800;color:#1a1a1a;' +
@@ -386,7 +386,7 @@ grandmaStyle.textContent =
   '.slide-image-wrap{display:-webkit-flex;display:flex;' +
   '-webkit-align-items:center;align-items:center;' +
   '-webkit-justify-content:center;justify-content:center;margin-bottom:4px;}' +
-  '.slide-image-wrap .trial-image{max-width:100%;max-height:58vh;' +
+  '.slide-image-wrap .trial-image{max-width:100%;max-height:70vh;' +
   'width:auto;height:auto;margin:0;}' +
   '.choice-row-fill{display:-webkit-flex;display:flex;' +
   '-webkit-justify-content:center;justify-content:center;' +
@@ -399,7 +399,7 @@ grandmaStyle.textContent =
   'overflow:hidden;border-radius:18px;border:4px solid #f0f0f0;' +
   'box-shadow:0 8px 28px rgba(0,0,0,0.13);}' +
   '.hl-holder .trial-image{border:none !important;box-shadow:none !important;' +
-  'border-radius:0 !important;max-height:58vh;}' +
+  'border-radius:0 !important;max-height:70vh;}' +
   '.hl-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;}' +
   '.hl-shape{position:absolute;-webkit-transform:translate(-50%,-50%);' +
   'transform:translate(-50%,-50%);aspect-ratio:1/1;pointer-events:none;}' +
