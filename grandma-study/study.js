@@ -1380,7 +1380,7 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
             lastZoom = -2;
             return;
           }
-          var scale = 2.15;
+          var scale = 2.8;
           var faceX = (hb.left + hb.width / 2) * imageW / 100;
           var faceY = (hb.top + hb.height * 0.16) * imageH / 100;
           var dx = holderW / 2 - faceX * scale;
