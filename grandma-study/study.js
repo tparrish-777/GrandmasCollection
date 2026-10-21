@@ -1381,7 +1381,7 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
         var holder = document.querySelector('.hl-holder');
         var image = holder && holder.querySelector('.trial-image');
         var layer = holder && holder.querySelector('.hl-layer');
-        var zoomEnabled = !/-All$/.test(hlKey);
+        var zoomEnabled = !!extraData && (extraData.slide === 'intro' || extraData.slide === 'mom' || extraData.slide === 'foil');
         var lastZoom = -2;
         var zoomCharacter = function(active) {
           if (!zoomEnabled) { active = -1; }
