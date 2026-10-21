@@ -483,6 +483,30 @@ document.head.appendChild(grandmaStyle);
 // CHOICE HANDLER
 // ================================================================
 window.grandmaCurrentResponse = null;
+window.grandmaNarrationComplete = false;
+window.grandmaAdvanceRequiresChoice = false;
+
+window.grandmaUpdateAdvanceButton = function() {
+  var buttons = document.querySelectorAll(
+    '#jspsych-html-button-response-btngroup button'
+  );
+  if (!buttons || buttons.length === 0) { return; }
+  buttons[0].disabled = !window.grandmaNarrationComplete ||
+    (window.grandmaAdvanceRequiresChoice && window.grandmaCurrentResponse === null);
+};
+
+function gateAdvanceUntilNarrationEnds(audio, requireChoice) {
+  window.grandmaNarrationComplete = false;
+  window.grandmaAdvanceRequiresChoice = !!requireChoice;
+  window.grandmaUpdateAdvanceButton();
+  if (!audio) { return; }
+  var markComplete = function() {
+    window.grandmaNarrationComplete = true;
+    window.grandmaUpdateAdvanceButton();
+  };
+  audio.addEventListener('ended', markComplete);
+  if (audio.ended) { markComplete(); }
+}
 
 window.grandmaHandleChoice = function(index) {
   window.grandmaCurrentResponse = index;
@@ -498,12 +522,7 @@ window.grandmaHandleChoice = function(index) {
   } else {
     left.classList.add('is-unselected'); right.classList.add('is-selected');
   }
-  var allBtns = document.querySelectorAll(
-    '#jspsych-html-button-response-btngroup button'
-  );
-  if (allBtns && allBtns.length > 0) {
-    allBtns[0].disabled = false;
-  }
+  window.grandmaUpdateAdvanceButton();
 };
 
 // ================================================================
@@ -1348,6 +1367,7 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
       if (typeof showAdminBar === 'function') { showAdminBar('trial'); }
       fillSlideNumber();
       var a = document.getElementById('slide-audio');
+      gateAdvanceUntilNarrationEnds(a, false);
 
       // Character spotlight: the active box is the last one whose time has
       // passed; it stays until the next box's time, and the final box holds
@@ -1486,6 +1506,7 @@ function makeChoiceTrial(audioFile, leftImg, rightImg, correctSide,
       fillSlideNumber();
       window.grandmaCurrentResponse = null;
       var a = document.getElementById('q-audio');
+      gateAdvanceUntilNarrationEnds(a, true);
 
       // Audio-synced attention highlight: spotlight the LEFT choice first,
       // then the RIGHT choice, at the times in opts.highlight. Cleared once
@@ -1521,14 +1542,6 @@ function makeChoiceTrial(audioFile, leftImg, rightImg, correctSide,
       }
 
       if (a) { a.play().catch(function() {}); }
-      setTimeout(function() {
-        var allBtns = document.querySelectorAll(
-          '#jspsych-html-button-response-btngroup button'
-        );
-        if (allBtns && allBtns.length > 0) {
-          allBtns[0].disabled = true;
-        }
-      }, 50);
     },
 
     // Guard against a null response (should not occur in normal flow,
@@ -1821,6 +1834,7 @@ var instructions = {
   choices: ["Continue to camera setup \u27A4"],
   on_load: function() {
     var a = document.getElementById('intro-audio');
+    gateAdvanceUntilNarrationEnds(a, false);
     if (a) { a.play().catch(function() {}); }
   },
   data: { slide_type: 'instructions' }
@@ -1863,6 +1877,7 @@ var setupCompleteSlide = {
   on_load: function() {
     if (typeof hideAdminBar === 'function') { hideAdminBar(); }
     var a = document.getElementById('setupdone-audio');
+    gateAdvanceUntilNarrationEnds(a, false);
     if (a) { a.play().catch(function() {}); }
   },
   data: { slide_type: 'setup_complete' }
@@ -1916,6 +1931,7 @@ var grownupHandoff = {
     // the per-page "Skip this page" button (to advance on to the email page).
     if (typeof wrapupPageOnLoad === 'function') { wrapupPageOnLoad(); }
     var a = document.getElementById('handoff-audio');
+    gateAdvanceUntilNarrationEnds(a, false);
     if (a) { a.play().catch(function() {}); }
   },
   data: { slide_type: 'handoff', trial_type: 'grownup_handoff' }
