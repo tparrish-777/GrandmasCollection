@@ -392,6 +392,38 @@ grandmaStyle.textContent =
   '-webkit-justify-content:center;justify-content:center;' +
   '-webkit-align-items:center;align-items:center;gap:64px;margin-top:2px;}' +
   '.slide-btn-row{-webkit-flex:0 0 auto;flex:0 0 auto;}' +
+  '.participant-back-btn{display:none;-webkit-align-items:center;align-items:center;' +
+  'background:#e8f2ff;color:#1d4ed8;border:2px solid #93c5fd;border-radius:30px;' +
+  'padding:10px 22px;margin:14px 4px 6px;font-size:16px;font-weight:700;cursor:pointer;' +
+  'box-shadow:0 3px 10px rgba(37,99,235,.16);}' +
+  '.participant-back-btn:hover{background:#dbeafe;}' +
+  '.grandma-back-overlay{position:fixed;inset:0;z-index:2147483000;' +
+  'display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;' +
+  '-webkit-justify-content:center;justify-content:center;padding:14px;box-sizing:border-box;' +
+  'background:rgba(15,23,42,.76);font-family:Arial,sans-serif;}' +
+  '.grandma-back-dialog{width:100%;max-width:1080px;max-height:calc(100vh - 28px);' +
+  'overflow:auto;box-sizing:border-box;background:#fff;border-radius:20px;padding:14px 18px;' +
+  'box-shadow:0 16px 52px rgba(0,0,0,.3);}' +
+  '.grandma-back-heading{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;' +
+  '-webkit-justify-content:space-between;justify-content:space-between;gap:12px;' +
+  'color:#1f2937;font-size:20px;font-weight:800;margin-bottom:8px;}' +
+  '.grandma-back-heading span{font-size:14px;font-weight:600;color:#64748b;}' +
+  '.grandma-back-content .trial-viewport{padding:0;}' +
+  '.grandma-back-content .trial-inner{max-width:100%;}' +
+  '.grandma-back-content .story-card-fill{border-radius:16px;padding:10px 20px 12px;}' +
+  '.grandma-back-content .slide-image-wrap .trial-image{max-height:48vh;}' +
+  '.grandma-back-content .choice-row-fill{gap:20px;pointer-events:none;}' +
+  '.grandma-back-content .choice-img-btn,.grandma-back-content .choice-cell,' +
+  '.grandma-back-content .choice-house-btn{cursor:default !important;pointer-events:none !important;}' +
+  '.grandma-back-content .slide-btn-row{display:none;}' +
+  '.grandma-back-actions{display:-webkit-flex;display:flex;-webkit-justify-content:center;' +
+  'justify-content:center;-webkit-align-items:center;align-items:center;gap:12px;margin-top:10px;}' +
+  '.grandma-back-actions button{border:0;border-radius:28px;padding:11px 20px;' +
+  'font-size:16px;font-weight:700;cursor:pointer;}' +
+  '.grandma-back-replay{background:#e8f2ff;color:#1d4ed8;}' +
+  '.grandma-back-return{background:#16a34a;color:#fff;}' +
+  '.grandma-back-audio{display:none;}' +
+
 
   // Character spotlight highlight (narrated slides)
   '.hl-holder{position:relative;display:-webkit-inline-box;display:inline-block;' +
@@ -493,6 +525,107 @@ window.grandmaUpdateAdvanceButton = function() {
   if (!buttons || buttons.length === 0) { return; }
   buttons[0].disabled = !window.grandmaNarrationComplete ||
     (window.grandmaAdvanceRequiresChoice && window.grandmaCurrentResponse === null);
+};
+
+
+window.grandmaShowPreviousButton = function() {
+  var trial = (typeof jsPsych !== 'undefined' && jsPsych.getCurrentTrial)
+    ? jsPsych.getCurrentTrial() : null;
+  var button = document.querySelector('.participant-back-btn');
+  if (!button) { return; }
+  var slideNumber = trial && trial.data ? Number(trial.data.slide_number) : 0;
+  button.style.display = slideNumber > 1 ? 'inline-flex' : 'none';
+};
+
+window.grandmaOpenPreviousSlide = function() {
+  var currentTrial = (typeof jsPsych !== 'undefined' && jsPsych.getCurrentTrial)
+    ? jsPsych.getCurrentTrial() : null;
+  var currentData = currentTrial && currentTrial.data ? currentTrial.data : {};
+  var currentNumber = Number(currentData.slide_number) || 0;
+  if (currentNumber <= 1 || typeof expTrials === 'undefined') { return; }
+
+  var previousTrial = expTrials[currentNumber - 2];
+  if (!previousTrial || typeof previousTrial.stimulus !== 'string') { return; }
+
+  var previousMarkup = document.createElement('div');
+  previousMarkup.innerHTML = previousTrial.stimulus;
+  var previousAudioSource = previousMarkup.querySelector('audio source');
+  var previousAudioUrl = previousAudioSource
+    ? previousAudioSource.getAttribute('src')
+    : '';
+  var previousNumber = previousTrial.data && previousTrial.data.slide_number
+    ? previousTrial.data.slide_number : currentNumber - 1;
+  var previousTotal = previousTrial.data && previousTrial.data.slide_total
+    ? previousTrial.data.slide_total : currentData.slide_total;
+  var previousCounter = previousMarkup.querySelector('.progress-slide');
+  if (previousCounter) {
+    previousCounter.textContent = 'Slide ' + previousNumber + ' of ' + previousTotal;
+  }
+
+  var previousContent = previousMarkup.querySelector('.trial-viewport') || previousMarkup;
+  var oldAudio = previousContent.querySelectorAll('audio, .slide-btn-row');
+  for (var i = 0; i < oldAudio.length; i++) {
+    if (oldAudio[i].parentNode) { oldAudio[i].parentNode.removeChild(oldAudio[i]); }
+  }
+  var oldActions = previousContent.querySelectorAll('[onclick]');
+  for (var j = 0; j < oldActions.length; j++) {
+    oldActions[j].removeAttribute('onclick');
+  }
+  var choiceHint = previousContent.querySelector('.pick-hint');
+  if (choiceHint) { choiceHint.textContent = 'Review this slide, then return to the current slide.'; }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'grandma-back-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Previous slide review');
+  overlay.innerHTML =
+    '<div class="grandma-back-dialog">' +
+      '<div class="grandma-back-heading">' +
+        '<strong>Previous slide</strong>' +
+        '<span>Slide ' + previousNumber + ' of ' + previousTotal + '</span>' +
+      '</div>' +
+      '<div class="grandma-back-content"></div>' +
+      '<div class="grandma-back-actions">' +
+        '<button type="button" class="grandma-back-replay">Replay narration</button>' +
+        '<button type="button" class="grandma-back-return">Return to current slide</button>' +
+      '</div>' +
+      '<audio class="grandma-back-audio" preload="auto"></audio>' +
+    '</div>';
+  overlay.querySelector('.grandma-back-content').appendChild(previousContent);
+
+  var replayButton = overlay.querySelector('.grandma-back-replay');
+  var returnButton = overlay.querySelector('.grandma-back-return');
+  var reviewAudio = overlay.querySelector('.grandma-back-audio');
+  if (previousAudioUrl) {
+    try { reviewAudio.src = new URL(previousAudioUrl, document.baseURI).href; }
+    catch (e) { reviewAudio.src = previousAudioUrl; }
+  } else {
+    replayButton.style.display = 'none';
+  }
+
+  var currentAudio = document.querySelector('#slide-audio, #q-audio');
+  var currentWasComplete = !!window.grandmaNarrationComplete;
+  if (currentAudio) { currentAudio.pause(); }
+
+  replayButton.addEventListener('click', function() {
+    if (!reviewAudio.src) { return; }
+    reviewAudio.currentTime = 0;
+    reviewAudio.play().catch(function() {});
+  });
+  returnButton.addEventListener('click', function() {
+    reviewAudio.pause();
+    if (overlay.parentNode) { overlay.parentNode.removeChild(overlay); }
+    if (currentAudio && currentAudio.isConnected && !currentWasComplete) {
+      currentAudio.currentTime = 0;
+      currentAudio.play().catch(function() {});
+    }
+    window.grandmaUpdateAdvanceButton();
+  });
+
+  document.body.appendChild(overlay);
+  if (reviewAudio.src) { reviewAudio.play().catch(function() {}); }
+  returnButton.focus();
 };
 
 function gateAdvanceUntilNarrationEnds(audio, requireChoice) {
@@ -1356,6 +1489,9 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
                 'a.currentTime=0;a.play();">' +
                 'Replay' +
               '</button>' +
+              '<button class="participant-back-btn" onclick="window.grandmaOpenPreviousSlide()">' +
+                '\u2190 Back' +
+              '</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -1366,6 +1502,7 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
       if (typeof adminMaybeAutoSkip === 'function' && adminMaybeAutoSkip()) { return; }
       if (typeof showAdminBar === 'function') { showAdminBar('trial'); }
       fillSlideNumber();
+      window.grandmaShowPreviousButton();
       var a = document.getElementById('slide-audio');
       gateAdvanceUntilNarrationEnds(a, false);
 
@@ -1485,6 +1622,9 @@ function makeChoiceTrial(audioFile, leftImg, rightImg, correctSide,
                 'a.currentTime=0;a.play();">' +
                 'Replay' +
               '</button>' +
+              '<button class="participant-back-btn" onclick="window.grandmaOpenPreviousSlide()">' +
+                '\u2190 Back' +
+              '</button>' +
             '</div>' +
             '<div class="pick-hint">' +
               'Click a picture to choose your answer!' +
@@ -1504,6 +1644,7 @@ function makeChoiceTrial(audioFile, leftImg, rightImg, correctSide,
       if (typeof adminMaybeAutoSkip === 'function' && adminMaybeAutoSkip()) { return; }
       if (typeof showAdminBar === 'function') { showAdminBar('trial'); }
       fillSlideNumber();
+      window.grandmaShowPreviousButton();
       window.grandmaCurrentResponse = null;
       var a = document.getElementById('q-audio');
       gateAdvanceUntilNarrationEnds(a, true);
