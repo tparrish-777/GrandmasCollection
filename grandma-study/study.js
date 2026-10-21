@@ -401,6 +401,8 @@ grandmaStyle.textContent =
   '.hl-holder .trial-image{border:none !important;box-shadow:none !important;' +
   'border-radius:0 !important;max-height:70vh;}' +
   '.hl-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;}' +
+  '.hl-holder .trial-image,.hl-layer{-webkit-transform-origin:0 0;transform-origin:0 0;' +
+  '-webkit-transition:-webkit-transform .65s ease;transition:transform .65s ease;}' +
   '.hl-shape{position:absolute;-webkit-transform:translate(-50%,-50%);' +
   'transform:translate(-50%,-50%);aspect-ratio:1/1;pointer-events:none;}' +
   '.hl-box{position:absolute;border:6px solid transparent;border-radius:12px;' +
@@ -414,7 +416,9 @@ grandmaStyle.textContent =
   '@keyframes hl-flash{0%,100%{border-color:#ff3b6b;}50%{border-color:#ffd23b;}}' +
   '@media (prefers-reduced-motion: reduce){.hl-box.hl-active{' +
   '-webkit-animation:none !important;animation:none !important;' +
-  'border-color:#ff3b6b !important;}}' +
+  'border-color:#ff3b6b !important;}' +
+  '.hl-holder .trial-image,.hl-layer{-webkit-transition:none !important;' +
+  'transition:none !important;}}' +
 
   // ----------------------------------------------------------------
   // GROWN-UP HANDOFF (reward) SCREEN — shown right before the email page
@@ -1354,6 +1358,43 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
         for (var i = 0; i < hlBoxes.length; i++) {
           els.push(document.getElementById('hl-box-' + i));
         }
+        var holder = document.querySelector('.hl-holder');
+        var image = holder && holder.querySelector('.trial-image');
+        var layer = holder && holder.querySelector('.hl-layer');
+        var lastZoom = -2;
+        var zoomCharacter = function(active) {
+          if (active === lastZoom) { return; }
+          lastZoom = active;
+          if (!image || !layer) { return; }
+          if (active < 0) {
+            image.style.webkitTransform = 'none';
+            image.style.transform = 'none';
+            layer.style.webkitTransform = 'none';
+            layer.style.transform = 'none';
+            return;
+          }
+          var hb = hlBoxes[active];
+          var holderW = holder.clientWidth, holderH = holder.clientHeight;
+          var imageW = image.offsetWidth, imageH = image.offsetHeight;
+          if (!holderW || !holderH || !imageW || !imageH) {
+            lastZoom = -2;
+            return;
+          }
+          var scale = 2.15;
+          var faceX = (hb.left + hb.width / 2) * imageW / 100;
+          var faceY = (hb.top + hb.height * 0.16) * imageH / 100;
+          var dx = holderW / 2 - faceX * scale;
+          var dy = holderH / 2 - faceY * scale;
+          var transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')';
+          image.style.webkitTransformOrigin = '0 0';
+          image.style.transformOrigin = '0 0';
+          image.style.webkitTransform = transform;
+          image.style.transform = transform;
+          layer.style.webkitTransformOrigin = '0 0';
+          layer.style.transformOrigin = '0 0';
+          layer.style.webkitTransform = transform;
+          layer.style.transform = transform;
+        };
         var syncHighlight = function() {
           var t = a.currentTime, active = -1;
           for (var k = 0; k < hlBoxes.length; k++) {
@@ -1362,11 +1403,13 @@ function makeSlide(imgFile, audioFile, parentText, extraData,
           for (var m = 0; m < els.length; m++) {
             if (els[m]) { els[m].classList.toggle('hl-active', m === active); }
           }
+          zoomCharacter(active);
         };
         var clearHighlight = function() {
           for (var m = 0; m < els.length; m++) {
             if (els[m]) { els[m].classList.remove('hl-active'); }
           }
+          zoomCharacter(-1);
         };
         a.addEventListener('timeupdate', syncHighlight);
         a.addEventListener('seeked', syncHighlight);
