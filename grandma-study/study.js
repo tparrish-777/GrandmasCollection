@@ -264,7 +264,8 @@ grandmaStyle.textContent =
   '-webkit-transition:border-color 0.2s,box-shadow 0.2s;' +
   'transition:border-color 0.2s,box-shadow 0.2s;}' +
   '.choice-frame-img{height:100%;width:auto;display:block;border-radius:14px;}' +
-  '.choice-shape-badge{position:absolute;left:12px;top:12px;width:26%;' +
+  '.choice-shape-badge{position:absolute;left:50%;top:42%;width:26%;' +
+  '-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%);' +
   'aspect-ratio:1/1;pointer-events:none;}' +
 
   '.choice-house-btn{position:relative;display:-webkit-inline-flex;display:inline-flex;' +
