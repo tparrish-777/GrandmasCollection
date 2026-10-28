@@ -608,6 +608,87 @@ window.grandmaOpenPreviousSlide = function() {
     replayButton.style.display = 'none';
   }
 
+  // Replay the character zoom when reviewing a first-introduction slide.
+  var previousSlideType = previousTrial.data && previousTrial.data.slide;
+  var replayZoomEnabled = previousSlideType === 'intro' ||
+    previousSlideType === 'mom' || previousSlideType === 'foil';
+  var replayHolder = replayZoomEnabled
+    ? previousContent.querySelector('.hl-holder') : null;
+  var replayImage = replayHolder && replayHolder.querySelector('.trial-image');
+  var replayLayer = replayHolder && replayHolder.querySelector('.hl-layer');
+  var replayBoxElements = replayHolder
+    ? replayHolder.querySelectorAll('.hl-box') : [];
+  var previousImageName = previousTrial.data && previousTrial.data.image;
+  var previousHighlightKey = typeof previousImageName === 'string'
+    ? previousImageName.split('/').pop().replace(/\.[^.]+$/, '') : '';
+  var replayHighlightBoxes = replayZoomEnabled
+    ? (HIGHLIGHTS[previousHighlightKey] || []).slice()
+        .sort(function(a, b) { return a.time - b.time; })
+    : [];
+  var lastReplayZoom = -2;
+  var syncPreviousSpotlight = function() {
+    var active = -1;
+    for (var k = 0; k < replayHighlightBoxes.length; k++) {
+      if (reviewAudio.currentTime >= replayHighlightBoxes[k].time) { active = k; }
+    }
+    for (var b = 0; b < replayBoxElements.length; b++) {
+      if (replayBoxElements[b]) {
+        replayBoxElements[b].classList.toggle('hl-active', b === active);
+      }
+    }
+    if (active === lastReplayZoom) { return; }
+    lastReplayZoom = active;
+    if (!replayImage || !replayLayer) { return; }
+    if (active < 0) {
+      replayImage.style.webkitTransform = 'none';
+      replayImage.style.transform = 'none';
+      replayLayer.style.webkitTransform = 'none';
+      replayLayer.style.transform = 'none';
+      return;
+    }
+    var hb = replayHighlightBoxes[active];
+    var holderW = replayHolder.clientWidth, holderH = replayHolder.clientHeight;
+    var imageW = replayImage.offsetWidth, imageH = replayImage.offsetHeight;
+    if (!holderW || !holderH || !imageW || !imageH) {
+      lastReplayZoom = -2;
+      return;
+    }
+    var scale = 2.8;
+    var faceX = (hb.left + hb.width / 2) * imageW / 100;
+    var faceY = (hb.top + hb.height * 0.16) * imageH / 100;
+    var dx = holderW / 2 - faceX * scale;
+    var dy = holderH / 2 - faceY * scale;
+    var transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')';
+    replayImage.style.webkitTransformOrigin = '0 0';
+    replayImage.style.transformOrigin = '0 0';
+    replayImage.style.webkitTransform = transform;
+    replayImage.style.transform = transform;
+    replayLayer.style.webkitTransformOrigin = '0 0';
+    replayLayer.style.transformOrigin = '0 0';
+    replayLayer.style.webkitTransform = transform;
+    replayLayer.style.transform = transform;
+  };
+  var clearPreviousSpotlight = function() {
+    for (var b = 0; b < replayBoxElements.length; b++) {
+      if (replayBoxElements[b]) { replayBoxElements[b].classList.remove('hl-active'); }
+    }
+    lastReplayZoom = -2;
+    if (replayImage) {
+      replayImage.style.webkitTransform = 'none';
+      replayImage.style.transform = 'none';
+    }
+    if (replayLayer) {
+      replayLayer.style.webkitTransform = 'none';
+      replayLayer.style.transform = 'none';
+    }
+  };
+  if (replayZoomEnabled && replayImage && replayLayer && replayHighlightBoxes.length) {
+    reviewAudio.addEventListener('timeupdate', syncPreviousSpotlight);
+    reviewAudio.addEventListener('seeked', syncPreviousSpotlight);
+    reviewAudio.addEventListener('ended', clearPreviousSpotlight);
+    replayImage.addEventListener('load', syncPreviousSpotlight);
+    syncPreviousSpotlight();
+  }
   var currentAudio = document.querySelector('#slide-audio, #q-audio');
   var currentWasComplete = !!window.grandmaNarrationComplete;
   if (currentAudio) { currentAudio.pause(); }
